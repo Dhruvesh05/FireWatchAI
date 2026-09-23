@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FireWatch AI — AI-Powered Forest Fire & Smoke Detection</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- GLOBAL NAVIGATION -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="#" class="brand" onclick="switchTab('hero'); return false;">
+        <div class="brand-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+        <span>FireWatch AI</span>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <ul class="nav-tabs">
+        <li><button class="nav-tab-btn active" data-tab="hero"><i class="fa-solid fa-house"></i> Home</button></li>
+        <li><button class="nav-tab-btn" data-tab="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</button></li>
+        <li><button class="nav-tab-btn" data-tab="detect"><i class="fa-solid fa-crosshairs"></i> Detect</button></li>
+        <li><button class="nav-tab-btn" data-tab="live"><i class="fa-solid fa-video"></i> Live Camera</button></li>
+        <li><button class="nav-tab-btn" data-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> History</button></li>
+        <li><button class="nav-tab-btn" data-tab="analytics"><i class="fa-solid fa-chart-pie"></i> Analytics</button></li>
+        <li><button class="nav-tab-btn" data-tab="alerts"><i class="fa-solid fa-bell"></i> Alerts</button></li>
+      </ul>
+
+      <!-- User / Auth Controls -->
+      <div class="nav-right">
+        <div id="auth-nav-buttons" class="nav-right">
+          <button class="btn btn-secondary btn-sm" onclick="openAuthModal('signin')">Sign In</button>
+          <button class="btn btn-primary btn-sm" onclick="openAuthModal('signup')">Create Account</button>
+        </div>
+
+        <div id="user-nav-menu" class="user-badge hidden">
+          <span class="status-indicator-dot"></span>
+          <span id="user-display-name">User</span>
+          <button class="btn btn-secondary btn-sm" style="height: 28px; padding: 0 8px; margin-left: 6px;" onclick="handleLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN APPLICATION CONTENT -->
+  <main class="main-wrapper">
+
+    <!-- TAB 1: HERO / FIRST SCREEN -->
+    <div id="tab-hero" class="app-tab-pane active">
+      <section class="hero-section">
+        <div class="hero-grid">
+          <div>
+            <h1 class="hero-heading">Detect Fire Before It Spreads.</h1>
+            <p style="color: var(--brand-green); font-weight: 600; font-size: 1.1rem; margin: 1rem 0 0.5rem;">
+              AI-Powered Forest Fire & Smoke Detection
+            </p>
+            <p style="color: var(--text-secondary); font-size: 1.05rem; max-width: 580px; margin-bottom: 2rem; line-height: 1.6;">
+              FireWatch AI uses computer vision to detect potential fire and smoke events from images, videos, and live camera feeds, helping you monitor incidents and respond faster.
+            </p>
+
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <button class="btn btn-primary" onclick="switchTab('detect')">
+                <i class="fa-solid fa-upload"></i> Upload & Detect
+              </button>
+              <button class="btn btn-secondary" onclick="openDemoModal()">
+                <i class="fa-solid fa-play"></i> Watch Demo
+              </button>
+            </div>
+
+            <!-- Compact Feature Row -->
+            <div class="hero-meta-row">
+              <div class="hero-feature-item">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>AI-Powered Detection</span>
+              </div>
+              <div class="hero-feature-item">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Real-Time Monitoring</span>
+              </div>
+              <div class="hero-feature-item">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Instant Telegram Alerts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero AI Overlay Mock Graphic -->
+          <div class="ai-hero-mock">
+            <img src="https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?auto=format&fit=crop&w=800&q=80" alt="Forest Monitoring" class="hero-img-bg" />
+            <div class="ai-overlay-grid"></div>
+            <div class="scan-line"></div>
+
+            <!-- Bounding Box Mock 1 -->
+            <div class="bbox-tag" style="top: 35%; left: 40%; width: 140px; height: 100px;">
+              <span class="bbox-label">FIRE 96%</span>
+            </div>
+
+            <!-- Bounding Box Mock 2 -->
+            <div class="bbox-tag" style="top: 20%; left: 20%; width: 120px; height: 90px; border-color: var(--warning); background: rgba(242,201,76,0.1);">
+              <span class="bbox-label" style="background: var(--warning);">SMOKE 91%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- TAB 2: DASHBOARD -->
+    <div id="tab-dashboard" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">FireWatch Dashboard</h2>
+        <p class="section-subtitle">Monitor AI-powered fire and smoke detections in real time.</p>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="grid-metrics">
+        <div class="card">
+          <div class="card-header">
+            <span style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 500;">Total Detections</span>
+            <i class="fa-solid fa-shield-halved" style="color: var(--brand-green);"></i>
+          </div>
+          <div class="metric-value" id="stat-total-detections">0</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 500;">Fire Detections</span>
+            <i class="fa-solid fa-fire" style="color: var(--fire-red);"></i>
+          </div>
+          <div class="metric-value" id="stat-fire-detections" style="color: var(--fire-red);">0</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 500;">Smoke Detections</span>
+            <i class="fa-solid fa-smog" style="color: var(--warning);"></i>
+          </div>
+          <div class="metric-value" id="stat-smoke-detections" style="color: var(--warning);">0</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 500;">Alerts Sent</span>
+            <i class="fa-paper-plane fa-solid" style="color: var(--bright-green);"></i>
+          </div>
+          <div class="metric-value" id="stat-alerts-sent" style="color: var(--bright-green);">0</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity & Quick Actions Grid -->
+      <div class="grid-2col" style="margin-bottom: 2rem;">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-list-check" style="color: var(--brand-green);"></i> Recent Detection Activity</h3>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('history')">View All</button>
+          </div>
+          <div class="table-container">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Result</th>
+                  <th>Counts</th>
+                  <th>Source</th>
+                  <th>Timestamp</th>
+                  <th>Alert</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-recent-table">
+                <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Loading activity...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-bolt" style="color: var(--bright-green);"></i> Quick Actions</h3>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <button class="btn btn-secondary" style="justify-content: flex-start; height: 50px;" onclick="switchTab('detect')">
+              <i class="fa-solid fa-image" style="color: var(--brand-green); font-size: 1.2rem;"></i>
+              <div style="text-align: left;">
+                <div style="font-weight: 600;">Upload Image</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Analyze static aerial or forest images</div>
+              </div>
+            </button>
+
+            <button class="btn btn-secondary" style="justify-content: flex-start; height: 50px;" onclick="switchTab('detect')">
+              <i class="fa-solid fa-film" style="color: var(--warning); font-size: 1.2rem;"></i>
+              <div style="text-align: left;">
+                <div style="font-weight: 600;">Analyze Video</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Stream and scan MP4 video feeds</div>
+              </div>
+            </button>
+
+            <button class="btn btn-secondary" style="justify-content: flex-start; height: 50px;" onclick="switchTab('live')">
+              <i class="fa-solid fa-camera" style="color: var(--bright-green); font-size: 1.2rem;"></i>
+              <div style="text-align: left;">
+                <div style="font-weight: 600;">Live Camera Monitoring</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Connect live webcam or RTSP camera</div>
+              </div>
+            </button>
+
+            <button class="btn btn-secondary" style="justify-content: flex-start; height: 50px;" onclick="switchTab('history')">
+              <i class="fa-solid fa-history" style="color: var(--text-secondary); font-size: 1.2rem;"></i>
+              <div style="text-align: left;">
+                <div style="font-weight: 600;">Detection History</div>
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">Review past incident records and Telegram alerts</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: DETECTION WORKSPACE -->
+    <div id="tab-detect" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">AI Detection Workspace</h2>
+        <p class="section-subtitle">Analyze images or video feeds for real-time fire and smoke identification.</p>
+      </div>
+
+      <div class="grid-2col">
+        <!-- Image Analysis Module -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-image" style="color: var(--brand-green);"></i> Image Detection</h3>
+          </div>
+          
+          <form id="image-detect-form">
+            <div class="form-group">
+              <label class="form-label">Upload Image File</label>
+              <input type="file" id="img-file-input" class="form-input" accept="image/*" required style="padding-top: 8px;">
+            </div>
+
+            <button type="submit" id="btn-img-submit" class="btn btn-primary" style="width: 100%;">
+              <i class="fa-solid fa-magnifying-glass"></i> Analyze Image
+            </button>
+          </form>
+
+          <div id="img-detect-loader" class="hidden" style="text-align: center; padding: 1.5rem 0;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem; color: var(--brand-green);"></i>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem;">Running YOLOv8 inference...</p>
+          </div>
+
+          <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <div class="form-label">Original Preview</div>
+              <img id="img-orig-preview" class="hidden" style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border);" alt="Original preview" />
+            </div>
+            <div>
+              <div class="form-label">Detection Result</div>
+              <div id="img-res-placeholder" style="background: var(--bg-secondary); border: 1px dashed var(--border); border-radius: var(--radius-md); height: 160px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem;">
+                Annotated result will appear here
+              </div>
+              <img id="img-res-preview" class="hidden" style="width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border);" alt="Annotated result" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Video Stream Analysis Module -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-film" style="color: var(--warning);"></i> Video Stream Detection</h3>
+          </div>
+
+          <form id="video-detect-form">
+            <div class="form-group">
+              <label class="form-label">Upload MP4 Video File</label>
+              <input type="file" id="vid-file-input" class="form-input" accept="video/*" required style="padding-top: 8px;">
+            </div>
+
+            <button type="submit" id="btn-vid-submit" class="btn btn-primary" style="width: 100%;">
+              <i class="fa-solid fa-play"></i> Start Video Stream Analysis
+            </button>
+          </form>
+
+          <div id="vid-detect-loader" class="hidden" style="text-align: center; padding: 1.5rem 0;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem; color: var(--warning);"></i>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem;">Processing video stream...</p>
+          </div>
+
+          <div id="vid-stream-container" style="margin-top: 1.5rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); min-height: 220px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem;">
+            Processed MJPEG video stream will render here
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: LIVE CAMERA -->
+    <div id="tab-live" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">Live Camera Feed</h2>
+        <p class="section-subtitle">Real-time YOLOv8 monitoring and Telegram emergency dispatch.</p>
+      </div>
+
+      <!-- Emergency State Banner (Controlled display) -->
+      <div id="cam-emergency-banner" class="emergency-banner hidden">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <i class="fa-solid fa-triangle-exclamation" style="color: var(--fire-red); font-size: 1.5rem;"></i>
+          <div>
+            <div style="font-weight: 800; color: var(--fire-red); font-size: 1rem;">FIRE DETECTED IN CAMERA FEED</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Automated Telegram dispatch triggered</div>
+          </div>
+        </div>
+        <span class="badge badge-danger">ALERT ACTIVE</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fa-solid fa-video" style="color: var(--bright-green);"></i> 16:9 Camera Monitor</h3>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-cam-start" class="btn btn-primary btn-sm" onclick="startAppWebcam()">
+              <i class="fa-solid fa-play"></i> Start Camera
+            </button>
+            <button id="btn-cam-stop" class="btn btn-danger btn-sm" onclick="stopAppWebcam()" disabled>
+              <i class="fa-solid fa-stop"></i> Stop Camera
+            </button>
+          </div>
+        </div>
+
+        <div style="position: relative; background: #000; border-radius: var(--radius-md); overflow: hidden; min-height: 440px; display: flex; align-items: center; justify-content: center;">
+          <div id="webcam-placeholder" style="color: var(--text-muted); text-align: center;">
+            <i class="fa-solid fa-camera" style="font-size: 3rem; margin-bottom: 1rem; color: var(--border);"></i>
+            <p>Press <strong>Start Camera</strong> to open live YOLOv8 stream</p>
+          </div>
+          <img id="app-webcam-feed" class="hidden" style="width: 100%; height: auto; max-height: 600px;" alt="Live Camera Stream" />
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: HISTORY -->
+    <div id="tab-history" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">Detection History</h2>
+        <p class="section-subtitle">Audit records logged in SQLite database.</p>
+      </div>
+
+      <div class="card">
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Detections</th>
+                <th>User</th>
+                <th>Timestamp</th>
+                <th>Telegram Alert</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">Loading detection history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: ANALYTICS -->
+    <div id="tab-analytics" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">Detection Analytics</h2>
+        <p class="section-subtitle">Data-driven insight on fire vs. smoke patterns and frequency.</p>
+      </div>
+
+      <div class="grid-2col">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Fire vs. Smoke Ratio</h3>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="chart-fire-smoke"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Incident Detection Timeline</h3>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="chart-timeline"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: ALERTS -->
+    <div id="tab-alerts" class="app-tab-pane">
+      <div style="margin-bottom: 2rem;">
+        <h2 class="section-heading">Telegram Alerts Log</h2>
+        <p class="section-subtitle">Notification status records generated by the alert system.</p>
+      </div>
+
+      <div class="card">
+        <div class="table-container">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Alert ID</th>
+                <th>Status</th>
+                <th>Channel</th>
+                <th>Message</th>
+                <th>Source</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-table-body">
+              <tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">Loading alert logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div id="auth-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <!-- Sign In View -->
+      <div id="signin-box">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Welcome back</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+          Sign in to continue monitoring fire and smoke detections.
+        </p>
+
+        <form id="signin-form">
+          <div class="form-group">
+            <label class="form-label">Email or Username</label>
+            <input type="text" id="signin-email" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="signin-password" class="form-input" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Sign In</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-secondary);">
+          Don't have an account? <a href="#" style="color: var(--brand-green); font-weight: 600;" onclick="openAuthModal('signup'); return false;">Create Account</a>
+        </div>
+      </div>
+
+      <!-- Sign Up View -->
+      <div id="signup-box" class="hidden">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Create Account</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+          Register to access FireWatch AI monitoring features.
+        </p>
+
+        <form id="signup-form">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="signup-name" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="signup-email" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="signup-password" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" id="signup-confirm" class="form-input" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Create Account</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-secondary);">
+          Already have an account? <a href="#" style="color: var(--brand-green); font-weight: 600;" onclick="openAuthModal('signin'); return false;">Sign In</a>
+        </div>
+      </div>
+
+      <div style="text-align: right; margin-top: 1rem;">
+        <button class="btn btn-secondary btn-sm" onclick="closeAuthModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WATCH DEMO MODAL -->
+  <div id="demo-modal" class="modal-backdrop hidden">
+    <div class="modal-content" style="max-width: 640px;">
+      <h2 style="font-size: 1.35rem; margin-bottom: 0.5rem;"><i class="fa-solid fa-play" style="color: var(--brand-green);"></i> FireWatch AI Pipeline Demo</h2>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+        End-to-end incident detection and response flow.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; display: flex; gap: 1rem; align-items: center;">
+          <span class="badge badge-neutral" style="font-size: 0.9rem;">1</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">Source Capture & Upload</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Input high-resolution camera feeds, aerial drones, or video streams.</div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; display: flex; gap: 1rem; align-items: center;">
+          <span class="badge badge-warning" style="font-size: 0.9rem;">2</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">YOLOv8 Computer Vision Inference</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Real-time bounding box prediction identifying Smoke (91%) and Fire (96%).</div>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; display: flex; gap: 1rem; align-items: center;">
+          <span class="badge badge-danger" style="font-size: 0.9rem;">3</span>
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">Instant Telegram Alert Dispatch</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary);">Sends automated incident notifications to emergency response teams.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align: right; margin-top: 1.5rem;">
+        <button class="btn btn-primary btn-sm" onclick="closeDemoModal()">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>&copy; 2026 FireWatch AI — AI-Powered Forest Fire & Smoke Detection System.</p>
+  </footer>
+
+  <!-- Application Script -->
+  <script src="{{ url_for('static', filename='client.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Camera Monitoring — FireWatch AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: var(--bg-primary); padding: 2rem 1rem;">
+  <div style="max-width: 1000px; margin: 0 auto;">
+    
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+      <a href="/" class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-fire-flame-curved"></i></div>
+        <span>FireWatch AI</span>
+      </a>
+      <a href="/" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Return to Main App</a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 style="font-size: 1.35rem; margin-bottom: 0.25rem;"><i class="fa-solid fa-video" style="color: var(--bright-green);"></i> Real-Time Camera Detection</h2>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">Direct 16:9 YOLOv8 stream with Telegram alert integration</p>
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-primary" id="btn-start" onclick="startWebcam()">
+            <i class="fa-solid fa-play"></i> Start Camera
+          </button>
+          <button class="btn btn-danger" id="btn-stop" onclick="stopWebcam()" disabled>
+            <i class="fa-solid fa-stop"></i> Stop Camera
+          </button>
+        </div>
+      </div>
+
+      <div style="position: relative; background: #000; border-radius: var(--radius-md); overflow: hidden; min-height: 480px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border);">
+        <p id="placeholder" style="color: var(--text-muted); font-size: 0.95rem; text-align: center;">
+          <i class="fa-solid fa-camera" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--border);"></i>
+          Press <strong>Start Camera</strong> to initialize live YOLOv8 inference stream.
+        </p>
+        <img id="webcam-img" class="hidden" style="width: 100%; height: auto; max-height: 640px;" alt="Webcam Stream Feed">
+      </div>
+
+      <div id="status" style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+        Status: Standby
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function startWebcam() {
+      fetch('/webcam/start', { method: 'POST' })
+        .then(r => r.json())
+        .then(() => {
+          document.getElementById('placeholder').classList.add('hidden');
+          const img = document.getElementById('webcam-img');
+          img.src = '/webcam_feed?' + Date.now();
+          img.classList.remove('hidden');
+          document.getElementById('btn-start').disabled = true;
+          document.getElementById('btn-stop').disabled  = false;
+          document.getElementById('status').innerHTML = '<span style="color: var(--bright-green); font-weight: 600;">🟢 Live — YOLOv8 inference active</span>';
+        });
+    }
+
+    function stopWebcam() {
+      fetch('/webcam/stop', { method: 'POST' })
+        .then(r => r.json())
+        .then(() => {
+          const img = document.getElementById('webcam-img');
+          img.src = '';
+          img.classList.add('hidden');
+          const placeholder = document.getElementById('placeholder');
+          placeholder.classList.remove('hidden');
+          placeholder.innerHTML = '<i class="fa-solid fa-camera" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: var(--border);"></i>Detection session stopped.';
+          document.getElementById('btn-start').disabled = false;
+          document.getElementById('btn-stop').disabled  = true;
+          document.getElementById('status').innerHTML = '<span style="color: var(--text-muted);">⬛ Stream stopped</span>';
+        });
+    }
+  </script>
+</body>
+</html>

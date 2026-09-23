@@ -1,0 +1,34 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Runtime databases / uploads
+*.db
+*.sqlite
+*.sqlite3
+FireDetectionApp\data\
+FireDetectionApp\uploads\
+
+# Next.js
+firewatch-landing\node_modules\
+firewatch-landing\.next\
+
+# IDE / OS
+.vscode\
+.idea\
+.DS_Store
+Thumbs.db
+
+# Large training archives
+Final results\*.zip
+
+Final results/*.zip
+
+*.bak
