@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Flame,
   Sun,
@@ -57,6 +57,14 @@ function isValidVideoFile(file: File): boolean {
   return ALLOWED_VIDEO_EXTS.some((ext) => name.endsWith(ext));
 }
 
+const NAV_TABS = [
+  { id: "detect", label: "Upload", icon: Upload },
+  { id: "camera", label: "Live Camera", icon: Camera },
+  { id: "history", label: "Audit Log", icon: Database },
+  { id: "analytics", label: "Analytics", icon: PieChart },
+  { id: "alerts", label: "Telegram Alerts", icon: Bell },
+] as const;
+
 export default function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,7 +74,7 @@ export default function Home() {
   // Platform State
   const [activeTab, setActiveTab] = useState<"detect" | "camera" | "history" | "analytics" | "alerts">("detect");
   const [detectMode, setDetectMode] = useState<"image" | "video">("image");
-  
+
   // Real Backend Data States
   const [stats, setStats] = useState({ total_detections: 0, fire_detections: 0, smoke_detections: 0, alerts_sent: 0 });
   const [historyData, setHistoryData] = useState<any[]>([]);
@@ -167,6 +175,19 @@ export default function Home() {
     fetchPlatformData();
   }, [appUrl]);
 
+  // Hero background video ref for reliable browser playback
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (heroVideoRef.current) {
+      heroVideoRef.current.defaultMuted = true;
+      heroVideoRef.current.muted = true;
+      heroVideoRef.current.play().catch(() => {
+        // Autoplay handled by browser policy
+      });
+    }
+  }, []);
+
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
@@ -175,6 +196,22 @@ export default function Home() {
     if (backendStatus === "offline") {
       e.preventDefault();
       setShowOfflineModal(true);
+    }
+  };
+
+  const handleTabNavigate = (
+    tabId: "detect" | "camera" | "history" | "analytics" | "alerts",
+    e: React.MouseEvent
+  ) => {
+    setActiveTab(tabId);
+    if (backendStatus === "offline") {
+      e.preventDefault();
+      setShowOfflineModal(true);
+      return;
+    }
+    const platformEl = document.getElementById("platform");
+    if (platformEl) {
+      platformEl.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -338,93 +375,90 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 selection:bg-orange-500 selection:text-white transition-colors duration-300">
-      
+
       {/* 
         ==================================================
         1. FLOATING CLOUD NAVBAR (SOLID WHITE BACKGROUND)
         ==================================================
       */}
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-5xl">
-        <div className="bg-white text-zinc-950 rounded-full px-6 py-3.5 shadow-2xl shadow-black/20 border border-zinc-200/80 flex items-center justify-between transition-all duration-300">
-          
+      {/* 
+        ==================================================
+        1. FLOATING CLOUD NAVBAR (SOLID WHITE BACKGROUND)
+        ==================================================
+      */}
+      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-6xl">
+        <div className="bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md text-zinc-950 dark:text-white rounded-full px-5 py-3 shadow-2xl shadow-black/20 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between transition-all duration-300">
+
           {/* Brand Logo */}
-          <a href="#hero" className="flex items-center gap-2.5 font-bold text-lg tracking-tight text-zinc-950 group">
+          <a href="#hero" className="flex items-center gap-2.5 font-bold text-lg tracking-tight text-zinc-950 dark:text-white group shrink-0">
             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
               <Flame className="w-5 h-5 fill-white" />
             </div>
-            <span className="font-extrabold text-xl tracking-tighter text-zinc-950">
+            <span className="font-extrabold text-xl tracking-tighter text-zinc-950 dark:text-white">
               FireWatch<span className="text-orange-600"> AI</span>
             </span>
           </a>
 
-          {/* Desktop Links */}
-          <nav className="hidden md:flex items-center gap-7 font-semibold text-sm text-zinc-600">
-            <a href="#features" className="hover:text-orange-600 transition-colors">
-              Features
-            </a>
-            <a href="#how-it-works" className="hover:text-orange-600 transition-colors">
-              How It Works
-            </a>
-            <a href="#technology" className="hover:text-orange-600 transition-colors">
-              Technology
-            </a>
-            <a href="#demo" className="hover:text-orange-600 transition-colors">
-              Demo
-            </a>
-            <a href="#platform" className="hover:text-orange-600 transition-colors">
-              Platform
-            </a>
+          {/* Floating Navbar Platform Navigation Buttons */}
+          <nav className="hidden md:flex items-center gap-1.5 bg-zinc-100/90 dark:bg-zinc-900/90 p-1.5 rounded-full border border-zinc-200/80 dark:border-zinc-800">
+            {NAV_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <a
+                  key={tab.id}
+                  href="#platform"
+                  onClick={(e) => handleTabNavigate(tab.id, e)}
+                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${isActive
+                    ? "bg-orange-600 text-white shadow-md shadow-orange-600/30"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-white dark:hover:bg-zinc-800"
+                    }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </a>
+              );
+            })}
           </nav>
 
           {/* Controls & Real Health Indicator */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {/* Real Backend Status Indicator */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 text-xs font-mono font-semibold text-zinc-700">
+            {/* <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 border border-zinc-200/50 dark:border-zinc-800">
               <span
-                className={`w-2 h-2 rounded-full ${
-                  backendStatus === "online"
-                    ? "bg-emerald-500 animate-pulse"
-                    : backendStatus === "checking"
+                className={`w-2 h-2 rounded-full ${backendStatus === "online"
+                  ? "bg-emerald-500 animate-pulse"
+                  : backendStatus === "checking"
                     ? "bg-amber-500"
                     : "bg-red-500"
-                }`}
+                  }`}
               />
               <span>
                 {backendStatus === "online"
-                  ? "Platform Online"
+                  ? ""
                   : backendStatus === "checking"
-                  ? "Connecting..."
-                  : "Platform Offline"}
+                    ? "Connecting..."
+                    : ""}
               </span>
-            </div>
+            </div> */}
 
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="w-9 h-9 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-800 flex items-center justify-center transition-all cursor-pointer"
+              className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 flex items-center justify-center transition-all cursor-pointer border border-zinc-200/50 dark:border-zinc-800"
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-600" />
+                <Sun className="w-4 h-4 text-amber-500" />
               ) : (
                 <Moon className="w-4 h-4 text-zinc-700" />
               )}
             </button>
 
-            {/* Launch Platform Anchor CTA */}
-            <a
-              href="#platform"
-              onClick={handlePlatformClick}
-              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-orange-600/25 transition-all hover:scale-105"
-            >
-              <span>Launch Platform</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-9 h-9 rounded-full bg-zinc-100 text-zinc-800 flex items-center justify-center cursor-pointer"
+              className="md:hidden w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 flex items-center justify-center cursor-pointer border border-zinc-200/50 dark:border-zinc-800"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -438,47 +472,33 @@ export default function Home() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="md:hidden mt-3 bg-white text-zinc-950 rounded-3xl p-6 shadow-2xl border border-zinc-200"
+              className="md:hidden mt-3 bg-white dark:bg-zinc-950 text-zinc-950 dark:text-white rounded-3xl p-5 shadow-2xl border border-zinc-200 dark:border-zinc-800"
             >
-              <div className="flex flex-col gap-4 font-bold text-sm">
-                <a
-                  href="#features"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 border-b border-zinc-100 hover:text-orange-600"
-                >
-                  Features
-                </a>
-                <a
-                  href="#how-it-works"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 border-b border-zinc-100 hover:text-orange-600"
-                >
-                  How It Works
-                </a>
-                <a
-                  href="#technology"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 border-b border-zinc-100 hover:text-orange-600"
-                >
-                  Technology
-                </a>
-                <a
-                  href="#demo"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 border-b border-zinc-100 hover:text-orange-600"
-                >
-                  Demo
-                </a>
-                <a
-                  href="#platform"
-                  onClick={(e) => {
-                    setMobileMenuOpen(false);
-                    handlePlatformClick(e);
-                  }}
-                  className="py-2 hover:text-orange-600"
-                >
-                  Platform
-                </a>
+              <div className="flex flex-col gap-2 font-bold text-sm">
+                <div className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider px-2 py-1">
+                  Platform Navigation
+                </div>
+                {NAV_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <a
+                      key={tab.id}
+                      href="#platform"
+                      onClick={(e) => {
+                        setMobileMenuOpen(false);
+                        handleTabNavigate(tab.id, e);
+                      }}
+                      className={`flex items-center gap-3 p-3 rounded-2xl transition-all ${isActive
+                        ? "bg-orange-600 text-white shadow-md shadow-orange-600/30"
+                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-orange-600"
+                        }`}
+                    >
+                      <Icon className="w-4.5 h-4.5" />
+                      <span>{tab.label}</span>
+                    </a>
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -490,42 +510,61 @@ export default function Home() {
         2. HERO SECTION
         ==================================================
       */}
-      <section id="hero" className="pt-36 sm:pt-48 pb-20 sm:pb-32 px-6 max-w-7xl mx-auto text-center relative overflow-hidden">
-        {/* Glow backdrop */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-orange-600/20 to-amber-500/10 blur-[140px] rounded-full pointer-events-none -z-10" />
-
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 font-mono text-xs font-bold uppercase tracking-wider mb-8">
-          <ShieldCheck className="w-4 h-4" />
-          <span>YOLOv8 Powered Forest Protection</span>
+      <section id="hero" className="relative w-full overflow-hidden min-h-[90vh] flex flex-col items-center justify-center pt-36 sm:pt-48 pb-20 sm:pb-32">
+        {/* Background Video (Full Bleed Edge-to-Edge) */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
+          <video
+            ref={heroVideoRef}
+            src="/herofns.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover opacity-100 dark:opacity-100 scale-105"
+          />
+          {/* Subtle light & dark mode vignette overlays for contrast */}
+          {/* <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/10 to-white dark:from-black/60 dark:via-black/30 dark:to-black" /> */}
         </div>
 
-        <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight mb-8 text-zinc-950 dark:text-white leading-[1.05]">
-          Detect Fire <br className="hidden sm:block" />
-          <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-red-500 bg-clip-text text-transparent">
-            Before It Spreads.
-          </span>
-        </h1>
+        {/* Glow backdrop */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-orange-600/25 to-amber-500/15 blur-[140px] rounded-full pointer-events-none z-0" />
 
-        <p className="text-lg sm:text-2xl text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto font-medium leading-relaxed mb-12">
-          FireWatch AI uses YOLOv8 computer vision to detect potential fire and smoke events from images, videos, and live camera feeds, helping users monitor incidents and respond faster.
-        </p>
+        {/* Hero Content Wrapper */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center flex flex-col items-center justify-center">
+          {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 font-mono text-xs font-bold uppercase tracking-wider mb-8 backdrop-blur-sm">
+            <ShieldCheck className="w-4 h-4" />
+            <span>YOLOv8 Powered Forest Protection</span>
+          </div> */}
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="#platform"
-            onClick={handlePlatformClick}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm tracking-wide shadow-xl shadow-orange-600/30 transition-all hover:scale-105"
-          >
-            <span>Upload & Detect</span>
-            <ArrowRight className="w-4 h-4" />
-          </a>
+          <h1 className="text-8xl sm:text-7xl lg:text-8xl font-black tracking-tight mb-8 text-zinc-950 dark:text-white leading-[1.05] drop-shadow-sm">
+            Detect Fire <br className="hidden sm:block" />
+            <span className="bg-gradient-to-r from-orange-600 via-amber-500 to-red-500 bg-clip-text text-transparent">
+              Before It Spreads.
+            </span>
+          </h1>
 
-          <a
-            href="#demo"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 font-bold text-sm tracking-wide hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all"
-          >
-            <span>Watch Demo</span>
-          </a>
+          <p className="text-lg sm:text-2xl text-zinc-700 dark:text-zinc-300 max-w-3xl mx-auto font-medium leading-relaxed mb-12 drop-shadow-sm">
+            FireWatch AI uses YOLOv8 computer vision to detect potential fire and smoke events from images, videos, and live camera feeds, helping users monitor incidents and respond faster.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="#platform"
+              onClick={handlePlatformClick}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm tracking-wide shadow-xl shadow-orange-600/30 transition-all hover:scale-105"
+            >
+              <span>Upload & Detect</span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+
+            <a
+              href="#demo"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-zinc-100/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 font-bold text-sm tracking-wide hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all"
+            >
+              <span>Watch Demo</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -733,7 +772,7 @@ export default function Home() {
           <a
             href="#platform"
             onClick={handlePlatformClick}
-            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm uppercase tracking-wider shadow-xl shadow-orange-600/25 transition-all hover:scale-105"
+            className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm uppercase tracking-wider shadow-xl shadow-orange-600/25 transition-all hover:scale-105"
           >
             <span>Launch Platform</span>
             <ArrowRight className="w-4 h-4" />
@@ -748,7 +787,7 @@ export default function Home() {
       */}
       <section id="platform" className="py-24 px-6 bg-black text-white border-t border-zinc-900 relative">
         <div className="max-w-7xl mx-auto space-y-12">
-          
+
           {/* Section Header */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-zinc-900 pb-8">
             <div>
@@ -819,24 +858,17 @@ export default function Home() {
 
           {/* Platform Main Navigation Tabs */}
           <div className="flex flex-wrap items-center gap-2 border-b border-zinc-900 pb-4">
-            {[
-              { id: "detect", label: "AI Detection Workspace", icon: Crosshair },
-              { id: "camera", label: "Live Camera Stream", icon: Camera },
-              { id: "history", label: "Audit Log & History", icon: Database },
-              { id: "analytics", label: "Analytics", icon: PieChart },
-              { id: "alerts", label: "Telegram Alerts", icon: Bell },
-            ].map((tab) => {
+            {NAV_TABS.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20"
-                      : "bg-zinc-950 border border-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-900"
-                  }`}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${isActive
+                    ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20"
+                    : "bg-zinc-950 border border-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-900"
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
@@ -853,18 +885,16 @@ export default function Home() {
                 <div className="inline-flex p-1 bg-zinc-950 border border-zinc-900 rounded-2xl">
                   <button
                     onClick={() => setDetectMode("image")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      detectMode === "image" ? "bg-orange-600 text-white" : "text-zinc-400 hover:text-white"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${detectMode === "image" ? "bg-orange-600 text-white" : "text-zinc-400 hover:text-white"
+                      }`}
                   >
                     <ImageIcon className="w-4 h-4" />
                     <span>Image Analysis</span>
                   </button>
                   <button
                     onClick={() => setDetectMode("video")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      detectMode === "video" ? "bg-orange-600 text-white" : "text-zinc-400 hover:text-white"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${detectMode === "video" ? "bg-orange-600 text-white" : "text-zinc-400 hover:text-white"
+                      }`}
                   >
                     <Film className="w-4 h-4" />
                     <span>Video Analysis</span>
@@ -1326,7 +1356,7 @@ export default function Home() {
             <a
               href="#platform"
               onClick={handlePlatformClick}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm tracking-wide shadow-xl shadow-orange-600/25 transition-all hover:scale-105"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-sm tracking-wide shadow-xl shadow-orange-600/25 transition-all hover:scale-105"
             >
               <span>Upload & Detect</span>
               <ArrowRight className="w-4 h-4" />
@@ -1334,7 +1364,7 @@ export default function Home() {
 
             <a
               href="#features"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 font-bold text-sm tracking-wide hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 font-bold text-sm tracking-wide hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-all"
             >
               <span>Explore Features</span>
             </a>
