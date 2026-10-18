@@ -24,7 +24,11 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "FireWatch AI — AI-Powered Forest Fire & Smoke Detection",
   description:
-    "FireWatch AI uses YOLOv8 computer vision to detect potential fire and smoke events from images, videos, and live camera feeds, helping users monitor incidents and respond faster.",
+    "FireWatch AI uses YOLOv8 computer vision to detect potential fire and smoke events from images and videos, helping users monitor incidents and respond faster.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

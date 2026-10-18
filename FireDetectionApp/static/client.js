@@ -349,44 +349,68 @@ function initDetectWorkspaces() {
 
 // ── LIVE WEBCAM CAMERA ────────────────────────────────────────────────────────
 async function startAppWebcam() {
+  const startBtn    = document.getElementById('btn-cam-start');
+  const stopBtn     = document.getElementById('btn-cam-stop');
+  const img         = document.getElementById('app-webcam-feed');
+  const placeholder = document.getElementById('webcam-placeholder');
+
+  // Show loading state while camera initializes on the server
+  startBtn.disabled = true;
+  startBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Starting...';
+
   try {
-    const res = await fetch('/webcam/start', { method: 'POST' });
-    if (res.ok) {
-      webcamActive = true;
-      const img = document.getElementById('app-webcam-feed');
-      const placeholder = document.getElementById('webcam-placeholder');
-      const startBtn = document.getElementById('btn-cam-start');
-      const stopBtn  = document.getElementById('btn-cam-stop');
+    const res  = await fetch('/webcam/start', { method: 'POST' });
+    const data = await res.json();
 
-      placeholder.classList.add('hidden');
-      img.src = '/webcam_feed?' + Date.now();
-      img.classList.remove('hidden');
-
-      startBtn.disabled = true;
-      stopBtn.disabled  = false;
-      showToast('Live camera feed started.', 'info');
+    if (!res.ok || data.status === 'error') {
+      showToast(data.error || 'Failed to open camera device.', 'error');
+      startBtn.disabled = false;
+      startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
+      return;
     }
+
+    // Wait briefly to let the generator open cv2.VideoCapture on the server
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Camera confirmed open on the server — attach the MJPEG stream
+    webcamActive = true;
+    placeholder.classList.add('hidden');
+
+    // Remove any old error handler before setting new src
+    img.onerror = null;
+    img.onload  = null;
+    img.src = '/webcam_feed?t=' + Date.now();
+    img.classList.remove('hidden');
+
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
+    stopBtn.disabled   = false;
+    showToast('Live camera feed started.', 'info');
+
   } catch (err) {
-    showToast('Failed to start webcam.', 'error');
+    showToast('Connection error: could not reach server.', 'error');
+    startBtn.disabled = false;
+    startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera';
   }
+}
+
+function _resetWebcamUI() {
+  webcamActive = false;
+  const img         = document.getElementById('app-webcam-feed');
+  const placeholder = document.getElementById('webcam-placeholder');
+  const startBtn    = document.getElementById('btn-cam-start');
+  const stopBtn     = document.getElementById('btn-cam-stop');
+  if (img) { img.onerror = null; img.onload = null; img.src = ''; img.classList.add('hidden'); }
+  if (placeholder) placeholder.classList.remove('hidden');
+  if (startBtn) { startBtn.disabled = false; startBtn.innerHTML = '<i class="fa-solid fa-play"></i> Start Camera'; }
+  if (stopBtn) stopBtn.disabled = true;
 }
 
 async function stopAppWebcam() {
   try {
     const res = await fetch('/webcam/stop', { method: 'POST' });
     if (res.ok) {
-      webcamActive = false;
-      const img = document.getElementById('app-webcam-feed');
-      const placeholder = document.getElementById('webcam-placeholder');
-      const startBtn = document.getElementById('btn-cam-start');
-      const stopBtn  = document.getElementById('btn-cam-stop');
-
-      img.src = '';
-      img.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-
-      startBtn.disabled = false;
-      stopBtn.disabled  = true;
+      _resetWebcamUI();
       showToast('Live camera feed stopped.', 'info');
     }
   } catch (err) {

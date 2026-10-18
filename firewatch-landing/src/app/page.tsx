@@ -9,7 +9,6 @@ import {
   X,
   ArrowRight,
   ShieldCheck,
-  Camera,
   Image as ImageIcon,
   Send,
   Cpu,
@@ -19,7 +18,6 @@ import {
   AlertCircle,
   Upload,
   Play,
-  Square,
   Search,
   PieChart,
   Bell,
@@ -28,10 +26,10 @@ import {
   Film,
   Crosshair,
   Activity,
-  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NeumorphicNavbar from "@/components/NeumorphicNavbar";
+import ShinyText from "@/components/ShinyText";
 
 // Supported file validation helpers
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/bmp"];
@@ -60,7 +58,6 @@ function isValidVideoFile(file: File): boolean {
 
 const NAV_TABS = [
   { id: "detect", label: "Upload", icon: Upload },
-  { id: "camera", label: "Live Camera", icon: Camera },
   { id: "history", label: "Audit Log", icon: Database },
   { id: "analytics", label: "Analytics", icon: PieChart },
   { id: "alerts", label: "Telegram Alerts", icon: Bell },
@@ -73,7 +70,7 @@ export default function Home() {
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
   // Platform State
-  const [activeTab, setActiveTab] = useState<"detect" | "camera" | "history" | "analytics" | "alerts">("detect");
+  const [activeTab, setActiveTab] = useState<"detect" | "history" | "analytics" | "alerts">("detect");
   const [detectMode, setDetectMode] = useState<"image" | "video">("image");
 
   // Real Backend Data States
@@ -96,11 +93,7 @@ export default function Home() {
   const [videoResult, setVideoResult] = useState<any | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
 
-  // Camera State
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraLoading, setCameraLoading] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [cameraKey, setCameraKey] = useState<number>(Date.now());
+
 
   // History Filtering
   const [historySearch, setHistorySearch] = useState("");
@@ -201,7 +194,7 @@ export default function Home() {
   };
 
   const handleTabNavigate = (
-    tabId: "detect" | "camera" | "history" | "analytics" | "alerts",
+    tabId: "detect" | "history" | "analytics" | "alerts",
     e: React.MouseEvent
   ) => {
     setActiveTab(tabId);
@@ -327,42 +320,7 @@ export default function Home() {
     }
   };
 
-  // Live Camera Handlers using correct POST method
-  const handleStartCamera = async () => {
-    setCameraLoading(true);
-    setCameraError(null);
-    try {
-      const res = await fetch(`${appUrl}/webcam/start`, {
-        method: "POST",
-      });
 
-      if (res.ok) {
-        setCameraKey(Date.now());
-        setCameraActive(true);
-      } else {
-        const errText = await res.text();
-        setCameraError(errText || "Unable to start backend camera stream.");
-      }
-    } catch {
-      setCameraError("FireWatch backend webcam service is unavailable.");
-    } finally {
-      setCameraLoading(false);
-    }
-  };
-
-  const handleStopCamera = async () => {
-    setCameraLoading(true);
-    try {
-      await fetch(`${appUrl}/webcam/stop`, {
-        method: "POST",
-      });
-    } catch {
-      // proceed
-    } finally {
-      setCameraActive(false);
-      setCameraLoading(false);
-    }
-  };
 
   // Filtered History Records
   const filteredHistory = historyData.filter((item) => {
@@ -387,9 +345,7 @@ export default function Home() {
 
           {/* Brand Logo */}
           <a href="#hero" className="flex items-center gap-2.5 font-bold text-lg tracking-tight text-zinc-950 dark:text-white group shrink-0">
-            <div className="w-10 h-10 rounded-full bg-[#e0e5ec] dark:bg-[#18191c] shadow-[4px_4px_8px_#c8cdd4,-4px_-4px_8px_#ffffff] dark:shadow-[4px_4px_8px_#101114,-4px_-4px_8px_#202124] flex items-center justify-center text-orange-600 group-hover:shadow-[inset_3px_3px_6px_#c8cdd4,inset_-3px_-3px_6px_#ffffff] dark:group-hover:shadow-[inset_3px_3px_6px_#101114,inset_-3px_-3px_6px_#202124] transition-all duration-300">
-              <Flame className="w-5 h-5 fill-orange-600 text-orange-600" />
-            </div>
+            <img src="/favicon.svg" alt="FireWatch logo" className="w-9 h-9 object-contain drop-shadow-md" />
             <span className="font-extrabold text-xl tracking-tighter text-zinc-900 dark:text-white">
               FireWatch<span className="text-orange-600"> AI</span>
             </span>
@@ -520,11 +476,10 @@ export default function Home() {
           transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
           className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center flex flex-col items-center justify-center"
         >
-          <h1 className="font-[family-name:var(--font-dm-sans)] text-4xl sm:text-7xl lg:text-8xl xl:text-9xl font-semibold tracking-tight mb-12 sm:mb-20 text-white leading-[1.05] sm:leading-[1.03]">
-            Detect Fire <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r text-white via-white via-[65%] to-[#ea580c] bg-clip-text text-transparent">
-              Before It Spreads.
-            </span>
+          <h1 className="font-[family-name:var(--font-dm-sans)] text-4xl sm:text-7xl lg:text-8xl xl:text-9xl font-semibold tracking-tight mb-12 sm:mb-20 leading-[1.05] sm:leading-[1.03]">
+            <ShinyText text="Detect Fire" variant="steel" speed={8} />{" "}
+            <br className="hidden sm:block" />
+            <ShinyText text="Before It Spreads." variant="steel-fire" speed={8} />
           </h1>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -572,7 +527,7 @@ export default function Home() {
           </h3>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center max-w-3xl mx-auto">
           <motion.img
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -587,15 +542,6 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ amount: 0.2, once: false }}
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            src="/webcam.svg"
-            alt="Webcam Detection"
-            className="w-full h-auto rounded-2xl object-contain transition-all duration-300"
-          />
-          <motion.img
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ amount: 0.2, once: false }}
-            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
             src="/telegram.svg"
             alt="Telegram Alerts"
             className="w-full h-auto rounded-2xl object-contain transition-all duration-300"
@@ -631,7 +577,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 text-center">
             {[
-              { step: "01", title: "Input Feed", desc: "User uploads image, video, or connects live stream." },
+              { step: "01", title: "Input Feed", desc: "User uploads an image or video file for analysis." },
               { step: "02", title: "YOLOv8 Inference", desc: "Neural network processes frames to detect fire and smoke." },
               { step: "03", title: "Audit Logging", desc: "Detection metrics and coordinates are recorded in SQLite." },
               { step: "04", title: "Instant Notification", desc: "Telegram bot dispatches immediate alert to responders." },
@@ -849,7 +795,7 @@ export default function Home() {
                 FireWatch AI Platform
               </h2>
               <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-2 max-w-xl leading-relaxed">
-                Analyze images and videos, stream live camera feeds, and inspect audit records powered by the Flask YOLOv8 backend.
+                Analyze images and videos, and inspect audit records powered by the Flask YOLOv8 backend.
               </p>
             </div>
 
@@ -1165,78 +1111,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* TAB 2: LIVE CAMERA STREAM */}
-              {activeTab === "camera" && (
-                <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-3xl p-5 sm:p-8 space-y-6 shadow-sm">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-900 pb-6">
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Radio className="w-5 h-5 text-orange-500" />
-                        Live MJPEG Surveillance Stream
-                      </h3>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                        Continuous real-time frame evaluation via OpenCV and YOLOv8 engine.
-                      </p>
-                    </div>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      {!cameraActive ? (
-                        <button
-                          onClick={handleStartCamera}
-                          disabled={cameraLoading}
-                          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 disabled:opacity-50 font-bold text-xs uppercase tracking-wider shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.7),-4px_-4px_10px_rgba(255,255,255,0.05)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.12),inset_-3px_-3px_6px_rgba(255,255,255,0.7)] dark:active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.6),inset_-3px_-3px_6px_rgba(255,255,255,0.04)] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          {cameraLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                          <span>Start Camera</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleStopCamera}
-                          disabled={cameraLoading}
-                          className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-red-600 dark:text-red-400 disabled:opacity-50 font-bold text-xs uppercase tracking-wider shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.8)] dark:shadow-[4px_4px_10px_rgba(0,0,0,0.7),-4px_-4px_10px_rgba(255,255,255,0.05)] active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.12),inset_-3px_-3px_6px_rgba(255,255,255,0.7)] dark:active:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.6),inset_-3px_-3px_6px_rgba(255,255,255,0.04)] transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
-                        >
-                          {cameraLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
-                          <span>Stop Camera</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {cameraError && (
-                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{cameraError}</span>
-                    </div>
-                  )}
-
-                  {/* Stream Video Container */}
-                  <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-black min-h-[300px] sm:min-h-[400px] flex items-center justify-center">
-                    {cameraActive ? (
-                      <img
-                        src={`${appUrl}/webcam_feed?t=${cameraKey}`}
-                        alt="Real-time webcam detection feed"
-                        className="w-full max-h-[550px] object-contain"
-                        onError={() => {
-                          setCameraError("Camera feed stream disconnected.");
-                          setCameraActive(false);
-                        }}
-                      />
-                    ) : (
-                      <div className="text-center p-6 sm:p-8 space-y-4">
-                        <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-600 flex items-center justify-center mx-auto">
-                          <Camera className="w-7 sm:w-8 h-7 sm:h-8" />
-                        </div>
-                        <div>
-                          <div className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white">Camera Standby</div>
-                          <div className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-                            Click "Start Camera" above to launch the MJPEG live video stream and evaluate frames in real-time.
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* TAB 3: AUDIT HISTORY */}
               {activeTab === "history" && (
@@ -1462,7 +1337,7 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
             className="text-sm sm:text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed"
           >
-            Analyze images, videos, and live camera feeds with AI-powered fire and smoke detection directly in this workspace.
+            Analyze images and videos with AI-powered fire and smoke detection directly in this workspace.
           </motion.p>
 
           <motion.div

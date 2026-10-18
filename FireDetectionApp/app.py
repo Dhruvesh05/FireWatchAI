@@ -53,9 +53,9 @@ from sendtelegram import maybe_send_fire_alert
 init_db()
 
 # ── Webcam state ──────────────────────────────────────────────────────────────
-_webcam_active = False
-_webcam_lock   = threading.Lock()
-_webcam_frame_queue_size = 1   # keep only the latest frame
+_webcam_active  = False
+_webcam_lock    = threading.Lock()
+_webcam_user_id = None   # captured once at start, from request context
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -294,14 +294,26 @@ def webcam_page():
 
 @app.route('/webcam/start', methods=['POST'])
 def webcam_start():
-    global _webcam_active
+    """
+    Set the active flag and capture user_id from request context.
+    Camera is opened exclusively inside the generator — no warm-up read here
+    because MSMF (Windows camera backend) can't handle quick open/close/reopen.
+    """
+    global _webcam_active, _webcam_user_id
+
     with _webcam_lock:
-        _webcam_active = True
+        if _webcam_active:
+            return jsonify({'status': 'started'})
+
+        _webcam_user_id = current_user_id()
+        _webcam_active  = True
+
     return jsonify({'status': 'started'})
 
 
 @app.route('/webcam/stop', methods=['POST'])
 def webcam_stop():
+    """Signal the generator to stop. Generator cleans up the cap itself."""
     global _webcam_active
     with _webcam_lock:
         _webcam_active = False
@@ -309,28 +321,45 @@ def webcam_stop():
 
 
 def _gen_webcam_frames():
-    """Generator: read from webcam 0, annotate, yield MJPEG."""
-    global _webcam_active
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        yield b''
-        return
+    """
+    Generator: owns the VideoCapture object for its entire lifetime.
+    Opens camera here, waits for MSMF to warm up, streams MJPEG, closes on exit.
+    """
+    global _webcam_active, _webcam_user_id
 
-    uid            = current_user_id()
-    session_fire   = 0
-    session_smoke  = 0
+    uid           = _webcam_user_id
+    session_fire  = 0
+    session_smoke = 0
+    fail_count    = 0
+    MAX_FAILS     = 30  # ~1.5s of consecutive failures before giving up
+
+    # Open camera — MUST use CAP_DSHOW on this Windows system.
+    # The default backend (MSMF / Media Foundation) fails with error -1072875772.
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    if not cap.isOpened():
+        print('[webcam] Could not open camera with CAP_DSHOW.')
+        with _webcam_lock:
+            _webcam_active = False
+        return
 
     try:
         while True:
             with _webcam_lock:
                 active = _webcam_active
+
             if not active:
                 break
 
             ret, frame = cap.read()
             if not ret or frame is None:
+                fail_count += 1
+                if fail_count >= MAX_FAILS:
+                    print(f'[webcam] {MAX_FAILS} consecutive read failures — stopping.')
+                    break
                 time.sleep(0.05)
                 continue
+
+            fail_count = 0
 
             frame, fire_count, smoke_count = annotate_frame(frame)
             session_fire  += fire_count
@@ -346,12 +375,17 @@ def _gen_webcam_frames():
                 )
 
             ret2, buffer = cv2.imencode('.jpg', frame)
+            if not ret2:
+                continue
+
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
                    + buffer.tobytes() + b'\r\n')
+
     finally:
         cap.release()
         with _webcam_lock:
             _webcam_active = False
+        print('[webcam] Stream ended, camera released.')
 
         if uid and (session_fire > 0 or session_smoke > 0):
             record_detection(uid, 'webcam', session_fire, session_smoke)
@@ -359,6 +393,9 @@ def _gen_webcam_frames():
 
 @app.route('/webcam_feed')
 def webcam_feed():
+    with _webcam_lock:
+        if not _webcam_active:
+            return Response('Camera not started', status=503, mimetype='text/plain')
     return Response(
         _gen_webcam_frames(),
         mimetype='multipart/x-mixed-replace; boundary=frame'
@@ -420,7 +457,9 @@ def api_alerts():
 
 def run_app():
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    # threaded=True is required so the blocking /webcam_feed stream
+    # doesn't prevent /webcam/stop and other routes from being served.
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
 
 
 if __name__ == '__main__':
