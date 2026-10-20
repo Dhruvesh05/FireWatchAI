@@ -48,8 +48,7 @@ The system is split into a lightweight **Flask inference API** and a modern **Ne
 
 <div align="center">
 
-<img src="assets/frontend.png" width="90%" alt="FireWatch AI web interface" />
-
+<img src="firewatch-landing/public/frontend.png" width="90%" alt="FireWatch AI web interface" />
 <br>
 
 <sub>FireWatch AI platform: upload, audit log, analytics, and Telegram alert views.</sub>
