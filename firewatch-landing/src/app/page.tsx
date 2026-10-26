@@ -527,7 +527,7 @@ export default function Home() {
           </h3>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-center max-w-6xl mx-auto">
           <motion.img
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -535,16 +535,25 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
             src="/upload.svg"
             alt="Upload Detection"
-            className="w-full h-auto rounded-2xl object-contain transition-all duration-300"
+            className="w-full h-auto rounded-2xl object-contain transition-all duration-300 hover:scale-[1.02]"
           />
           <motion.img
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ amount: 0.2, once: false }}
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            src="/webcam.svg"
+            alt="Webcam Detection"
+            className="w-full h-auto rounded-2xl object-contain transition-all duration-300 hover:scale-[1.02]"
+          />
+          <motion.img
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ amount: 0.2, once: false }}
+            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
             src="/telegram.svg"
             alt="Telegram Alerts"
-            className="w-full h-auto rounded-2xl object-contain transition-all duration-300"
+            className="w-full h-auto rounded-2xl object-contain transition-all duration-300 hover:scale-[1.02]"
           />
         </div>
       </motion.section>
